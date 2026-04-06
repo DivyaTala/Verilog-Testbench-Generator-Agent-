@@ -1,0 +1,8 @@
+# Generated artifacts
+.generated/
+runs/
+feedback.md
+*.log
+.codex_work_*/
+__pycache__/
+*.pyc

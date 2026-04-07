@@ -137,7 +137,7 @@ module counter(clk, rst, reinit, incr_valid, decr_valid, initial_value, incr, de
   assign _039_ = reinit ? initial_value[3] : _038_;
   assign _067_ = ~ _039_;
   assign _040_ = _036_ | _067_;
-  always_ff @(posedge clk)
+  always @(posedge clk)
     value[2] <= _064_;
   assign _041_ = _036_ & _039_;
   assign _042_ = _023_ | _025_;
@@ -164,7 +164,7 @@ module counter(clk, rst, reinit, incr_valid, decr_valid, initial_value, incr, de
   assign _053_ = _034_ & _052_;
   assign value_next[2] = _049_ ? _053_ : _035_;
   assign _077_ = _026_ & _041_;
-  always_ff @(posedge clk)
+  always @(posedge clk)
     value[1] <= _075_;
   assign _054_ = ~ _077_;
   assign _055_ = _051_ ? _026_ : _054_;
@@ -193,7 +193,7 @@ module counter(clk, rst, reinit, incr_valid, decr_valid, initial_value, incr, de
   assign _062_ = ~ _089_;
   assign _090_ = _061_ & _062_;
   assign _003_ = ~ _090_;
-  always_ff @(posedge clk)
+  always @(posedge clk)
     value[0] <= _087_;
   assign _091_ = value_next[0] & _056_;
   assign _063_ = ~ _091_;
@@ -232,7 +232,7 @@ module counter(clk, rst, reinit, incr_valid, decr_valid, initial_value, incr, de
   assign _022_ = _017_ ^ _020_;
   assign _023_ = reinit ? initial_value[1] : _022_;
   assign _106_ = _018_ ^ _019_;
-  always_ff @(posedge clk)
+  always @(posedge clk)
     value[3] <= _104_;
   assign _024_ = ~ _106_;
   assign _025_ = reinit ? initial_value[0] : _024_;

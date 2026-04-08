@@ -63,7 +63,7 @@ If no single winner is found, the system enters an iterative feedback loop: it w
 ### 1. Clone the Repository
 
 ```bash
-git clone "https://github.com/DivyaTala/Verilog-Testbench-Generator-Agent-"
+git clone https://github.com/DivyaTala/Verilog-Testbench-Generator-Agent-
 cd codex_verilog_tb_full
 ```
 

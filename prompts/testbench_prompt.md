@@ -1,4 +1,4 @@
-You are generating a Verilog/SystemVerilog testbench from a Markdown spec.
+You are generating a SystemVerilog testbench from a Markdown spec.
 
 Inputs:
 - `SPEC.md` contains the design specification.
@@ -10,6 +10,7 @@ Task:
 3. Write a self-contained testbench file in `generated/`.
 4. Write `generated/README_TESTBENCH.md` describing assumptions, how to run the testbench, and any unresolved spec questions.
 5. Keep the spec unchanged.
+
 
 Important requirements:
 - Prefer a `timescale` if appropriate.

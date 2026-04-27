@@ -64,7 +64,6 @@ module fifo_flops(clk, rst, push_ready, push_valid, pop_ready, pop_valid, full, 
   wire _137_;
   wire _138_;
   wire _139_;
-  wire _140_;
   wire _000_;
   wire _001_;
   wire _002_;
@@ -73,7 +72,6 @@ module fifo_flops(clk, rst, push_ready, push_valid, pop_ready, pop_valid, full, 
   wire _005_;
   wire _006_;
   wire _007_;
-  wire _008_;
   wire _009_;
   wire _010_;
   wire _011_;
@@ -142,6 +140,7 @@ module fifo_flops(clk, rst, push_ready, push_valid, pop_ready, pop_valid, full, 
   wire \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_counter_items/value_loaden ;
   reg \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/gen_no_buffer.br_misc_unused_ram_rd_data_valid/unused ;
   wire \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/ram_rd_addr_update ;
+  wire \br_fifo_ctrl_1r1w/bypass_ready ;
   wire \br_fifo_ctrl_1r1w/pop_beat ;
   wire \br_fifo_ctrl_1r1w/push_beat ;
   wire [7:0] \br_ram_flops/gen_read_data_pipe[0].br_ram_data_rd_pipe/gen_d[0].br_delay_valid_d/out_stages[0] ;
@@ -242,6 +241,7 @@ module fifo_flops(clk, rst, push_ready, push_valid, pop_ready, pop_valid, full, 
   assign slots[0] = ~ items[0];
   assign slots[3] = ~ _036_;
   assign slots[2] = ~ _037_;
+  assign empty = ~ \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/gen_no_buffer.br_misc_unused_ram_rd_data_valid/unused ;
   assign _128_ = \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/ram_rd_addr_update  ? _001_ : \br_ram_flops/gen_read_decoder[0].br_ram_addr_decoder_rd/gen_tiles_eq1.br_delay_valid_addr/out_stages[0] [2];
   assign \br_fifo_ctrl_1r1w/push_beat  = push_valid & push_ready;
   assign pop_valid = push_valid | \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/gen_no_buffer.br_misc_unused_ram_rd_data_valid/unused ;
@@ -341,28 +341,27 @@ module fifo_flops(clk, rst, push_ready, push_valid, pop_ready, pop_valid, full, 
   assign pop_data[1] = \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/gen_no_buffer.br_misc_unused_ram_rd_data_valid/unused  ? \br_ram_flops/gen_read_data_pipe[0].br_ram_data_rd_pipe/gen_d[0].br_delay_valid_d/out_stages[0] [1] : push_data[1];
   assign \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/ram_rd_addr_update  = \br_fifo_ctrl_1r1w/pop_beat  & \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/gen_no_buffer.br_misc_unused_ram_rd_data_valid/unused ;
   assign pop_data[0] = \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/gen_no_buffer.br_misc_unused_ram_rd_data_valid/unused  ? \br_ram_flops/gen_read_data_pipe[0].br_ram_data_rd_pipe/gen_d[0].br_delay_valid_d/out_stages[0] [0] : push_data[0];
+  assign \br_fifo_ctrl_1r1w/bypass_ready  = pop_ready & empty;
   assign _004_ = \br_ram_flops/gen_read_decoder[0].br_ram_addr_decoder_rd/gen_tiles_eq1.br_delay_valid_addr/out_stages[0] [0] & \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/ram_rd_addr_update ;
   assign _005_ = \br_ram_flops/gen_read_decoder[0].br_ram_addr_decoder_rd/gen_tiles_eq1.br_delay_valid_addr/out_stages[0] [1] & _004_;
   assign _006_ = \br_ram_flops/gen_read_decoder[0].br_ram_addr_decoder_rd/gen_tiles_eq1.br_delay_valid_addr/out_stages[0] [2] & _005_;
   assign _007_ = \br_ram_flops/gen_read_decoder[0].br_ram_addr_decoder_rd/gen_tiles_eq1.br_delay_valid_addr/out_stages[0] [3] | _006_;
-  assign _134_ = \br_ram_flops/gen_read_decoder[0].br_ram_addr_decoder_rd/gen_tiles_eq1.br_delay_valid_addr/out_stages[0] [2] ^ _005_;
-  assign _008_ = ~ _134_;
   assign _002_ = \br_ram_flops/gen_read_decoder[0].br_ram_addr_decoder_rd/gen_tiles_eq1.br_delay_valid_addr/out_stages[0] [1] ^ _004_;
-  assign _135_ = \br_ram_flops/gen_read_decoder[0].br_ram_addr_decoder_rd/gen_tiles_eq1.br_delay_valid_addr/out_stages[0] [0] ^ \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/ram_rd_addr_update ;
-  assign _009_ = ~ _135_;
-  assign _136_ = ~ _009_;
-  assign _010_ = _002_ | _136_;
-  assign _137_ = \br_ram_flops/gen_read_decoder[0].br_ram_addr_decoder_rd/gen_tiles_eq1.br_delay_valid_addr/out_stages[0] [3] & _010_;
-  assign _011_ = ~ _137_;
-  assign _012_ = _008_ | _011_;
+  assign _134_ = \br_ram_flops/gen_read_decoder[0].br_ram_addr_decoder_rd/gen_tiles_eq1.br_delay_valid_addr/out_stages[0] [0] ^ \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/ram_rd_addr_update ;
+  assign _009_ = ~ _134_;
+  assign _135_ = ~ _009_;
+  assign _010_ = _002_ | _135_;
+  assign _136_ = \br_ram_flops/gen_read_decoder[0].br_ram_addr_decoder_rd/gen_tiles_eq1.br_delay_valid_addr/out_stages[0] [3] & _010_;
+  assign _011_ = ~ _136_;
+  assign _012_ = 1'h0 | _011_;
   assign _000_ = _007_ & _012_;
-  assign _138_ = ~ _008_;
-  assign _001_ = _011_ & _138_;
-  assign _003_ = _012_ & _136_;
-  assign _139_ = _026_ ? _013_ : \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [3];
-  assign _140_ = rst ? 1'h0 : _139_;
+  assign _137_ = ~ 1'h0;
+  assign _001_ = _011_ & _137_;
+  assign _003_ = _012_ & _135_;
+  assign _138_ = _026_ ? _013_ : \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [3];
+  assign _139_ = rst ? 1'h0 : _138_;
   always_ff @(posedge clk)
-    \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [3] <= _140_;
+    \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [3] <= _139_;
   assign _075_ = _026_ ? _014_ : \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [2];
   assign _076_ = rst ? 1'h0 : _075_;
   always_ff @(posedge clk)
@@ -376,12 +375,11 @@ module fifo_flops(clk, rst, push_ready, push_valid, pop_ready, pop_valid, full, 
   always_ff @(posedge clk)
     \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [0] <= _080_;
   assign _017_ = ~ \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [2];
-  assign _081_ = ~ pop_ready;
+  assign _081_ = ~ \br_fifo_ctrl_1r1w/bypass_ready ;
   assign _026_ = \br_fifo_ctrl_1r1w/push_beat  & _081_;
   assign _018_ = \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [3] & _026_;
   assign _082_ = \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [2] & _018_;
   assign items_next = { _034_, _035_, _028_, _029_ };
   assign slots_next[1] = _032_;
   assign slots[1] = \slots_reg[1] ;
-  assign empty = 1'h1;
 endmodule

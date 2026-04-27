@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run OpenAI Codex from Python to generate a Verilog/SystemVerilog testbench."""
+"""Run OpenAI Codex from Python to generate a SystemVerilog testbench."""
 from __future__ import annotations
 
 import argparse
@@ -35,15 +35,29 @@ def ensure_git_repo(repo_dir: Path) -> None:
     run(["git", "branch", "-M", "main"], cwd=repo_dir)
 
 
-def build_prompt(spec_text: str, tb_name: str, top_module: str, language: str) -> str:
-    ext = "sv" if language.lower().startswith("system") else "v"
-    return f"""You are generating a {language} testbench from a Markdown spec.
+def derive_names_from_spec(spec_path: Path) -> tuple[str, str]:
+    """Derive tb_name and top_module from the spec file stem.
+
+    Examples:
+        my_spec.md          -> tb_name='tb_my_spec',  top_module='my_spec'
+        counter.md          -> tb_name='tb_counter',  top_module='counter'
+        shiftleft.md        -> tb_name='tb_shiftleft', top_module='shiftleft'
+        spec_counter.md     -> tb_name='tb_spec_counter', top_module='spec_counter'
+    """
+    stem = spec_path.stem          # e.g. "counter" or "my_spec"
+    top_module = stem              # DUT name matches spec stem
+    tb_name = f"tb_{stem}"        # testbench file = tb_<stem>
+    return tb_name, top_module
+
+
+def build_prompt(spec_text: str, tb_name: str, top_module: str) -> str:
+    return f"""You are generating a SystemVerilog testbench from a Markdown spec.
 
 Target DUT name: {top_module}
 Requested testbench file name: {tb_name}
 
 Read SPEC.md and generate:
-1. generated/{tb_name}.{ext}
+1. generated/{tb_name}.sv
 2. generated/README_TESTBENCH.md
 
 Requirements:
@@ -57,6 +71,21 @@ Requirements:
 - Do not edit files outside generated/ unless required for a minimal test harness.
 - Print exactly one line containing TB_PASS when all checks pass.
 - Use $error or $fatal on mismatches.
+- If multiple clock domains exist, generate separate clocks with different frequencies.
+- Introduce asynchronous behavior between clock domains.
+- Add randomized delays to simulate clock skew.
+- Include edge-case and corner-case scenarios.
+- Check for signal stability across clock boundaries.
+- Avoid assuming ideal synchronization.
+- Avoid advanced SystemVerilog features unsupported by Icarus Verilog.
+- Do not use classes, randomize(), or assertions requiring formal engines.
+- Use simple procedural checks (if + $error) instead of complex assertions.
+- Ensure all signal widths match exactly between DUT and testbench.
+- Do not use dynamic arrays, queues, or complex SystemVerilog features.
+- Avoid assigning mismatched bit-width signals.
+- Initialize all signals before use.
+- Use simple logic and avoid unsupported constructs.
+
 
 SPEC.md:
 ---
@@ -66,19 +95,30 @@ SPEC.md:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate a Verilog/SystemVerilog testbench with Codex.")
+    parser = argparse.ArgumentParser(description="Generate a SystemVerilog testbench with Codex.")
     parser.add_argument("--spec", required=True, type=Path, help="Path to the Markdown spec file")
     parser.add_argument("--outdir", required=True, type=Path, help="Directory to copy generated files into")
-    parser.add_argument("--tb-name", default="testbench", help="Base name for the generated testbench file")
-    parser.add_argument("--top-module", required=True, help="Name of the DUT top module")
-    parser.add_argument("--language", default="systemverilog", choices=["verilog", "systemverilog"], help="Output HDL language")
-    parser.add_argument("--codex-extra-args", nargs=argparse.REMAINDER, default=[], help="Extra args passed to codex exec after --")
+    parser.add_argument("--tb-name", default=None,
+                        help="Base name for the generated testbench file (default: tb_<spec-stem>)")
+    parser.add_argument("--top-module", default=None,
+                        help="Name of the DUT top module (default: <spec-stem>)")
+    parser.add_argument("--codex-extra-args", nargs=argparse.REMAINDER, default=[],
+                        help="Extra args passed to codex exec after --")
     args = parser.parse_args()
 
     spec_path: Path = args.spec.expanduser().resolve()
     if not spec_path.is_file():
         print(f"Spec file not found: {spec_path}", file=sys.stderr)
         return 2
+
+    # Auto-derive names from spec filename when not explicitly provided
+    auto_tb_name, auto_top_module = derive_names_from_spec(spec_path)
+    tb_name: str = args.tb_name if args.tb_name else auto_tb_name
+    top_module: str = args.top_module if args.top_module else auto_top_module
+
+    print(f"[info] spec       : {spec_path.name}")
+    print(f"[info] top_module : {top_module}")
+    print(f"[info] tb_name    : {tb_name}")
 
     outdir: Path = args.outdir.expanduser().resolve()
     outdir.mkdir(parents=True, exist_ok=True)
@@ -99,12 +139,11 @@ def main() -> int:
 
     ensure_git_repo(workdir)
 
-    prompt = build_prompt(read_text(copied_spec), args.tb_name, args.top_module, args.language)
+    prompt = build_prompt(read_text(copied_spec), tb_name, top_module)
     prompt_file = workdir / "PROMPT.txt"
     prompt_file.write_text(prompt, encoding="utf-8")
 
-    tb_ext = "sv" if args.language == "systemverilog" else "v"
-    output_tb = workdir / "generated" / f"{args.tb_name}.{tb_ext}"
+    output_tb = workdir / "generated" / f"{tb_name}.sv"
     output_readme = workdir / "generated" / "README_TESTBENCH.md"
 
     cmd = ["codex", "exec", "--full-auto", "--sandbox", "workspace-write"]

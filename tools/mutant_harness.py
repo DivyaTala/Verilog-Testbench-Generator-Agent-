@@ -18,7 +18,14 @@ def run(cmd: Sequence[str], cwd: Path | None = None) -> subprocess.CompletedProc
     full = list(cmd)
     if os.name == "nt":
         full = ["cmd", "/c", *full]
-    return subprocess.run(full, cwd=str(cwd) if cwd else None, capture_output=True, text=True)
+    return subprocess.run(
+        full,
+        cwd=str(cwd) if cwd else None,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
 
 
 def candidate_sources(candidate: Path) -> list[Path]:
@@ -45,14 +52,16 @@ def compile_and_run(
 
     out_vvp = build_dir / f"{sources[0].stem}.vvp"
     compile_cmd = [
-        iverilog,
-        *extra_iverilog_args,
-        "-s",
-        tb_top,
-        "-o",
-        str(out_vvp),
-        *[str(p) for p in sources],
-        str(tb_file),
+    iverilog,
+    "-g2012",
+    *extra_iverilog_args,
+    "-s",
+    tb_top,
+    "-o",
+    str(out_vvp),
+    *[str(p) for p in sources],
+    str(tb_file),
+
     ]
 
     c = run(compile_cmd)
@@ -111,14 +120,31 @@ def write_feedback(path: Path, tb_file: Path, spec_file: Path, results: list[dic
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
-def refine_with_codex(repo_root: Path, spec_rel: str, tb_rel: str, feedback_rel: str) -> None:
+def refine_with_codex(repo_root: Path, spec_rel: str, tb_rel: str, feedback_rel: str, mode: str)  -> None:
+    
+    if mode == "no_pass":
+        instruction = (
+        "The testbench failed to validate any candidate. "
+        "Fix the testbench to correctly implement the specification. "
+        "Ensure reset, clocking, and expected outputs are correct."
+    )
+
+    elif mode == "multiple_pass":
+        instruction = (
+        "Multiple candidates passed. "
+        "Strengthen the testbench by adding corner cases, edge conditions, "
+        "and stricter checks to distinguish the correct design."
+    )
+
+    else:
+        instruction = "Improve the testbench."
+
     prompt = (
         f"Read {spec_rel} and {feedback_rel}. "
-        f"Improve {tb_rel} so it better distinguishes the correct DUT from the mutants. "
+        f"{instruction} "
         f"Keep the testbench self-checking. "
-        f"Do not modify the DUT source files. "
-        f"Only edit files in the repository workspace."
-    )
+        f"Do not modify DUT files. Only modify the testbench."
+)
 
     c = run([
         "codex",
@@ -196,12 +222,28 @@ def main() -> int:
 
         print(f"\nAmbiguous result: {len(winners)} passing candidates.")
         print(f"Refining testbench with Codex using {feedback_path.name}...")
+        
+        num_winners = len(winners)
+
+        if num_winners == 1:
+            print(f"\nUnique winner: {winners[0]}")
+            return 0
+
+        elif num_winners == 0:
+            print("\nNo passing candidates → refining for correctness")
+            mode = "no_pass"
+
+        else:
+            print(f"\nMultiple ({num_winners}) passing candidates → refining for discrimination")
+            mode = "multiple_pass"
+
         refine_with_codex(
             repo_root=repo_root,
             spec_rel=str(spec_file.relative_to(repo_root)),
             tb_rel=str(tb_file.relative_to(repo_root)),
             feedback_rel=str(feedback_path.relative_to(repo_root)),
-        )
+            mode=mode,
+)
 
     print("\nNo unique winner found after all iterations.")
     return 1

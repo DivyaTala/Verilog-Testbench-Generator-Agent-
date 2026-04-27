@@ -1,37 +1,36 @@
-This module implements a synchronous, up/down counter that operates on the rising edge of the `clk` input.
+This module implements a synchronous, 13-entry, 8-bit wide First-In, First-Out (FIFO) buffer. It operates with a single clock (`clk`) and is reset by a synchronous, active-high signal (`rst`).
 
-### Module Interface
+The primary function is to buffer data between a producer (push side) and a consumer (pop side) using a standard ready/valid handshake protocol.
 
-module counter(clk, rst, reinit, incr_valid, decr_valid, initial_value, incr, decr, value, value_next);
+### **Interfaces and Handshake**
 
-### Initialization
+*   **Push Interface:** A data producer can push an 8-bit word (`push_data`) into the FIFO. A push transaction is accepted on a clock cycle when both the producer's `push_valid` signal and the FIFO's `push_ready` signal are high. The `push_ready` signal is asserted by the FIFO whenever it is not full.
+*   **Pop Interface:** A data consumer can pop an 8-bit word (`pop_data`) from the FIFO. A pop transaction occurs on a clock cycle when both the FIFO's `pop_valid` signal and the consumer's `pop_ready` signal are high. The `pop_valid` signal is asserted by the FIFO whenever it contains at least one valid item.
 
-Upon a synchronous, active-high `rst`, the counter's output `value` is loaded with the value provided on the `initial_value` input.
+### **Functional Behavior**
 
-A separate active-high `reinit` signal also synchronously loads the counter with `initial_value`. When `reinit` is asserted, any concurrent increment or decrement requests are ignored, and the counter's next state will be `initial_value`.
+The FIFO has two primary modes of operation depending on its state:
 
-### Operation
+1.  **Bypass (Cut-through) Mode:** When the FIFO is empty, it operates in a bypass mode. If a new item is pushed (`push_valid` is high) while the consumer is ready to accept it (`pop_ready` is high), the data is passed directly from the push interface to the pop interface in the same clock cycle. In this scenario, `push_data` appears on `pop_data` and `pop_valid` is asserted high combinationally. This provides a zero-cycle latency for data transfers through an empty FIFO.
 
-The counter's state can be modified on each clock cycle based on the `incr_valid` and `decr_valid` signals.
-- If `incr_valid` is high, the counter value is incremented by the amount specified by the `incr` input.
-- If `decr_valid` is high, the counter value is decremented by the amount specified by the `decr` input.
-- If both `incr_valid` and `decr_valid` are asserted in the same cycle, the net change (`incr - decr`) is applied to the current counter value.
-- If neither `incr_valid` nor `decr_valid` is asserted, the counter holds its current value.
+2.  **Buffered Mode:** When the FIFO is not empty, or when it is empty but the consumer is not ready (`pop_ready` is low), pushed data is stored internally. Data is read from the head of the internal storage and presented at the `pop_data` output. When an item is popped, the next item in the queue becomes available at the `pop_data` output on the following clock cycle.
 
-The maximum value for both `incr` and `decr` is 3.
+The `pop_data` and `pop_valid` outputs are not driven by a dedicated final register stage. They are driven combinationally from either the push inputs (during bypass) or the internal memory's read output.
 
-### Counting Range and Wrap-Around
+### **Reset**
 
-The counter operates within an inclusive range of 0 to 10. It is configured to wrap around on overflow and underflow.
-- **Overflow:** If an increment operation results in a value greater than 10, the value wraps around. For example, if the current `value` is 9 and it is incremented by 3, the `value_next` will be 1.
-- **Underflow:** If a decrement operation results in a value less than 0, the value wraps around from the maximum. For example, if the current `value` is 1 and it is decremented by 3, the `value_next` will be 9.
+When `rst` is asserted high, the FIFO is cleared and reset to its initial state:
+*   It becomes empty.
+*   `pop_valid` is de-asserted to `0`.
+*   `push_ready` is asserted to `1`.
+*   All status flags are updated to reflect an empty FIFO (`empty` = 1, `full` = 0, `items` = 0, `slots` = 13).
 
-### Outputs
+### **Status Flags**
 
-The module provides two outputs representing the counter's state:
-- `value`: The registered state of the counter. This output has a one-cycle latency and reflects the result of the operations from the previous clock cycle.
-- `value_next`: A combinational signal that indicates the value that the counter will hold on the next rising edge of `clk`. It is calculated based on the current `value` and the `reinit`, `incr`, and `decr` control inputs. This output is useful for logic that requires the next-cycle state without a clock delay.
+The module provides several status flags to monitor its state:
 
-
-
-When `rst` or `reinit` is asserted, `value_next` shall equal `initial_value` in the same cycle.
+*   `full`: A signal that is high when the FIFO cannot accept any new entries.
+*   `empty`: A signal that is high when the FIFO contains no valid entries.
+*   `items`: A counter indicating the exact number of valid entries currently stored in the FIFO.
+*   `slots`: A counter indicating the number of available empty spaces in the FIFO.
+*   `full_next`, `empty_next`, `items_next`, `slots_next`: These signals predict the state of their corresponding status flags for the next clock cycle. They are calculated based on the current state and the pending push/pop transactions, allowing for single-cycle lookahead logic by the surrounding design.

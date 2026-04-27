@@ -1,18 +1,20 @@
 # Testbench Notes
 
-Assumptions required by the spec:
+- The testbench targets module `cdc_fifo_flops_push_credit` from `specs/my_spec.md`.
+- It is self-checking and maintains a simple FIFO/credit scoreboard for:
+  `pop_data`, `pop_valid`, `pop_empty`, `pop_items`, `push_slots`,
+  `push_full`, `credit_count_push`, and `credit_available_push`.
+- It exercises:
+  reset behavior, empty-to-nonempty cut-through, backpressure hold,
+  FIFO ordering, withheld-credit accounting, stalled credit return,
+  full-depth operation, pointer wraparound, and the sender-reset handshake.
 
-- `value`, `value_next`, and `initial_value` are modeled as 4-bit signals because the counter range is 0 through 10.
-- `incr` and `decr` are modeled as 2-bit signals because the spec states their maximum value is 3.
-- `rst` is treated as a synchronous active-high reset exactly like `reinit`, and both force `value_next` to equal `initial_value` in the same cycle.
-- The testbench expects `value` to update on each rising edge of `clk` and checks `value_next` combinationally before and after each active clock edge.
+## Assumptions
 
-Coverage included by the testbench:
-
-- Synchronous reset load
-- Hold behavior with no valid requests
-- Increment-only and decrement-only updates
-- Simultaneous increment and decrement using net change
-- Overflow wrap-around and underflow wrap-around
-- `reinit` priority over concurrent increment/decrement requests
-- `rst` priority over concurrent increment/decrement requests
+- Cross-domain visibility is allowed to take multiple destination-clock cycles.
+  The testbench uses bounded waits of up to 48 push or pop clocks to allow for
+  the specified synchronizer and delayed-reset behavior.
+- `push_slots` reflects physical FIFO storage space, while
+  `credit_available_push` reflects sender-visible credits after withholding.
+- `credit_count_push` is expected to increase only when the returned credit is
+  observed on `push_credit`.

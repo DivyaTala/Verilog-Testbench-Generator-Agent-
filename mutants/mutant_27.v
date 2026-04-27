@@ -82,14 +82,10 @@ module fifo_flops(clk, rst, push_ready, push_valid, pop_ready, pop_valid, full, 
   wire _014_;
   wire _015_;
   wire _016_;
-  wire _017_;
   wire _018_;
   wire _019_;
   wire _020_;
-  wire _021_;
-  wire _022_;
   wire _023_;
-  wire _024_;
   wire _025_;
   wire _026_;
   wire _028_;
@@ -142,6 +138,7 @@ module fifo_flops(clk, rst, push_ready, push_valid, pop_ready, pop_valid, full, 
   wire \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_counter_items/value_loaden ;
   reg \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/gen_no_buffer.br_misc_unused_ram_rd_data_valid/unused ;
   wire \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/ram_rd_addr_update ;
+  wire \br_fifo_ctrl_1r1w/bypass_ready ;
   wire \br_fifo_ctrl_1r1w/pop_beat ;
   wire \br_fifo_ctrl_1r1w/push_beat ;
   wire [7:0] \br_ram_flops/gen_read_data_pipe[0].br_ram_data_rd_pipe/gen_d[0].br_delay_valid_d/out_stages[0] ;
@@ -188,13 +185,10 @@ module fifo_flops(clk, rst, push_ready, push_valid, pop_ready, pop_valid, full, 
   assign \br_ram_flops/gen_read_data_pipe[0].br_ram_data_rd_pipe/gen_d[0].br_delay_valid_d/out_stages[0]  = \br_ram_flops/gen_row[0].gen_col[0].br_ram_flops_tile/mem [\br_ram_flops/gen_read_decoder[0].br_ram_addr_decoder_rd/gen_tiles_eq1.br_delay_valid_addr/out_stages[0] ];
   assign _019_ = ~ _082_;
   assign _020_ = \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [0] & _026_;
-  assign _021_ = \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [1] & _020_;
-  assign _022_ = \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [2] & _021_;
-  assign _023_ = \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [3] | _022_;
+  assign _023_ = \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [3] | 1'h0;
   assign _013_ = _019_ & _023_;
   assign _083_ = ~ _018_;
-  assign _024_ = \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [2] & _083_;
-  assign _014_ = _021_ ? _017_ : _024_;
+  assign _014_ = \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [2] & _083_;
   assign _015_ = \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [1] ^ _020_;
   assign _025_ = \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [0] ^ _026_;
   assign _016_ = _019_ & _025_;
@@ -242,6 +236,7 @@ module fifo_flops(clk, rst, push_ready, push_valid, pop_ready, pop_valid, full, 
   assign slots[0] = ~ items[0];
   assign slots[3] = ~ _036_;
   assign slots[2] = ~ _037_;
+  assign empty = ~ \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/gen_no_buffer.br_misc_unused_ram_rd_data_valid/unused ;
   assign _128_ = \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/ram_rd_addr_update  ? _001_ : \br_ram_flops/gen_read_decoder[0].br_ram_addr_decoder_rd/gen_tiles_eq1.br_delay_valid_addr/out_stages[0] [2];
   assign \br_fifo_ctrl_1r1w/push_beat  = push_valid & push_ready;
   assign pop_valid = push_valid | \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/gen_no_buffer.br_misc_unused_ram_rd_data_valid/unused ;
@@ -341,6 +336,7 @@ module fifo_flops(clk, rst, push_ready, push_valid, pop_ready, pop_valid, full, 
   assign pop_data[1] = \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/gen_no_buffer.br_misc_unused_ram_rd_data_valid/unused  ? \br_ram_flops/gen_read_data_pipe[0].br_ram_data_rd_pipe/gen_d[0].br_delay_valid_d/out_stages[0] [1] : push_data[1];
   assign \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/ram_rd_addr_update  = \br_fifo_ctrl_1r1w/pop_beat  & \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/gen_no_buffer.br_misc_unused_ram_rd_data_valid/unused ;
   assign pop_data[0] = \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/gen_no_buffer.br_misc_unused_ram_rd_data_valid/unused  ? \br_ram_flops/gen_read_data_pipe[0].br_ram_data_rd_pipe/gen_d[0].br_delay_valid_d/out_stages[0] [0] : push_data[0];
+  assign \br_fifo_ctrl_1r1w/bypass_ready  = pop_ready & empty;
   assign _004_ = \br_ram_flops/gen_read_decoder[0].br_ram_addr_decoder_rd/gen_tiles_eq1.br_delay_valid_addr/out_stages[0] [0] & \br_fifo_ctrl_1r1w/br_fifo_pop_ctrl/br_fifo_pop_ctrl_core/ram_rd_addr_update ;
   assign _005_ = \br_ram_flops/gen_read_decoder[0].br_ram_addr_decoder_rd/gen_tiles_eq1.br_delay_valid_addr/out_stages[0] [1] & _004_;
   assign _006_ = \br_ram_flops/gen_read_decoder[0].br_ram_addr_decoder_rd/gen_tiles_eq1.br_delay_valid_addr/out_stages[0] [2] & _005_;
@@ -375,13 +371,11 @@ module fifo_flops(clk, rst, push_ready, push_valid, pop_ready, pop_valid, full, 
   assign _080_ = rst ? 1'h0 : _079_;
   always_ff @(posedge clk)
     \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [0] <= _080_;
-  assign _017_ = ~ \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [2];
-  assign _081_ = ~ pop_ready;
+  assign _081_ = ~ \br_fifo_ctrl_1r1w/bypass_ready ;
   assign _026_ = \br_fifo_ctrl_1r1w/push_beat  & _081_;
   assign _018_ = \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [3] & _026_;
   assign _082_ = \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [2] & _018_;
   assign items_next = { _034_, _035_, _028_, _029_ };
   assign slots_next[1] = _032_;
   assign slots[1] = \slots_reg[1] ;
-  assign empty = 1'h1;
 endmodule

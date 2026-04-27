@@ -376,12 +376,12 @@ module fifo_flops(clk, rst, push_ready, push_valid, pop_ready, pop_valid, full, 
   always_ff @(posedge clk)
     \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [0] <= _080_;
   assign _017_ = ~ \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [2];
-  assign _081_ = ~ pop_ready;
+  assign _081_ = ~ 1'h0;
   assign _026_ = \br_fifo_ctrl_1r1w/push_beat  & _081_;
   assign _018_ = \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [3] & _026_;
   assign _082_ = \br_ram_flops/gen_write_decoder[0].decoded_wr_addr[0] [2] & _018_;
   assign items_next = { _034_, _035_, _028_, _029_ };
   assign slots_next[1] = _032_;
   assign slots[1] = \slots_reg[1] ;
-  assign empty = 1'h1;
+  assign empty = 1'h0;
 endmodule

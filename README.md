@@ -54,7 +54,7 @@ mutants/*.v
 ---
 
 ### Step 3: Install requirements
-
+This project uses no third party python packages. So this step can be skipped
 ```bash
 pip install -r requirements.txt
 ```

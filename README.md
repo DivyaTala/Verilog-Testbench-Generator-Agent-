@@ -31,7 +31,7 @@ The system follows these stages:
 ### Step 1: Clone the repository
 
 ```bash
-git clone <your-repo-link>
+git clone <https://github.com/DivyaTala/Verilog-Testbench-Generator-Agent->
 cd codex_verilog_tb_full
 ```
 
